@@ -34,5 +34,13 @@ module.exports = {
       },
     },
   },
+  safelist: [
+    '-translate-x-full',
+    'translate-x-0',
+    'md:relative',
+    'md:translate-x-0',
+    'md:z-auto',
+    'md:hidden',
+  ],
   plugins: [],
 }
