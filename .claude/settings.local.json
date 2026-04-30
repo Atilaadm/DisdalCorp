@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"c:\\\\PROJETO CLAUDE\" -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object @{N='Arquivo';E={$_.FullName.Replace\\('c:\\\\PROJETO CLAUDE\\\\',''\\)}} | Format-Table -AutoSize)",
+      "PowerShell(Stop-Process -Name \"node\" -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd \"c:\\\\PROJETO CLAUDE\"; Start-Process powershell -ArgumentList \"-NoExit\", \"-Command\", \"Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd 'c:\\\\PROJETO CLAUDE'; npx next dev\" -WindowStyle Normal; Write-Host \"Servidor iniciado em janela separada\")",
+      "PowerShell(Start-Sleep -Seconds 8; try { $r = Invoke-WebRequest -Uri \"http://localhost:3000\" -TimeoutSec 5 -UseBasicParsing; Write-Host \"ONLINE - Status: $\\($r.StatusCode\\)\" } catch { Write-Host \"Aguardando... $_\" })",
+      "PowerShell(Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd \"c:\\\\PROJETO CLAUDE\"; Start-Process powershell -ArgumentList \"-NoExit\", \"-Command\", \"Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; cd 'c:\\\\PROJETO CLAUDE'; npx next dev\" -WindowStyle Normal; Start-Sleep -Seconds 10; try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/login\" -TimeoutSec 5 -UseBasicParsing; Write-Host \"ONLINE - Status: $\\($r.StatusCode\\)\" } catch { Write-Host \"Erro: $_\" })",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\PROJETO CLAUDE\\\\public\" -Force)",
+      "PowerShell(Rename-Item \"c:\\\\PROJETO CLAUDE\\\\public\\\\logo-disdal.png.png\" \"logo-disdal.png\")",
+      "PowerShell(Get-Process -Name \"node\" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq \"\" } | Select-Object Id, CPU, WorkingSet)",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force -ErrorAction SilentlyContinue; Write-Host \"Processo $\\($proc.OwningProcess\\) encerrado\" } else { Write-Host \"Nenhum processo na porta 3000\" })",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force; Write-Host \"Encerrado PID $\\($proc.OwningProcess\\)\" })"
+    ]
+  }
+}
