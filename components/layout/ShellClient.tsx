@@ -1,0 +1,60 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
+import { Menu } from 'lucide-react'
+import Sidebar from './Sidebar'
+
+interface Props {
+  naoLidas: number
+  nomeUsuario: string
+  tipoUsuario: string
+  children: React.ReactNode
+}
+
+export default function ShellClient({ naoLidas, nomeUsuario, tipoUsuario, children }: Props) {
+  const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+
+  useEffect(() => { setOpen(false) }, [pathname])
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Backdrop mobile */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — overlay no mobile, fixa no desktop */}
+      <div className={`
+        fixed inset-y-0 left-0 z-50 transition-transform duration-300
+        md:relative md:z-auto md:translate-x-0
+        ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <Sidebar naoLidas={naoLidas} nomeUsuario={nomeUsuario} tipoUsuario={tipoUsuario} />
+      </div>
+
+      {/* Conteúdo principal */}
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* Barra topo mobile com hamburger */}
+        <div className="flex items-center h-12 px-3 bg-white border-b border-gray-100 md:hidden sticky top-0 z-30">
+          <button
+            onClick={() => setOpen(true)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Abrir menu"
+          >
+            <Menu size={20} />
+          </button>
+          <span className="ml-2 text-sm font-bold" style={{ color: '#1A3A8A' }}>
+            DISDAL CORP
+          </span>
+        </div>
+
+        {children}
+      </main>
+    </div>
+  )
+}

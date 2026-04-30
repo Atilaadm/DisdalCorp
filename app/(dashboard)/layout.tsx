@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/layout/Sidebar'
+import ShellClient from '@/components/layout/ShellClient'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -20,15 +20,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('lida', false)
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar
-        naoLidas={naoLidas ?? 0}
-        nomeUsuario={usuario?.nome ?? user.email ?? ''}
-        tipoUsuario={usuario?.tipo ?? 'analista_financeiro'}
-      />
-      <main className="flex-1 flex flex-col min-w-0">
-        {children}
-      </main>
-    </div>
+    <ShellClient
+      naoLidas={naoLidas ?? 0}
+      nomeUsuario={usuario?.nome ?? user.email ?? ''}
+      tipoUsuario={usuario?.tipo ?? 'analista_financeiro'}
+    >
+      {children}
+    </ShellClient>
   )
 }

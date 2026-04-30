@@ -44,7 +44,7 @@ export default function Sidebar({ naoLidas = 0, nomeUsuario = '', tipoUsuario = 
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen bg-white border-r border-gray-100 shadow-sm">
+    <aside className="flex flex-col w-64 h-full min-h-screen bg-white border-r border-gray-100 shadow-sm">
       {/* Logo */}
       <div
         className="flex items-center justify-center px-5 py-4 border-b border-gray-100"
