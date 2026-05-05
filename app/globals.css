@@ -2,10 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* react-big-calendar */
-@import 'react-big-calendar/lib/css/react-big-calendar.css';
-
-/* Ajustes para integrar o calendário com Tailwind */
+/* Ajustes react-big-calendar (CSS base importado direto no CalendarioClient.tsx) */
 .rbc-calendar        { font-family: inherit; }
 .rbc-toolbar button  { font-family: inherit; cursor: pointer; }
 .rbc-header          { font-weight: 600; font-size: 12px; padding: 6px 0; }
