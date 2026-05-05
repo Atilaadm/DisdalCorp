@@ -9,10 +9,11 @@ interface Props {
   naoLidas: number
   nomeUsuario: string
   tipoUsuario: string
+  moduloSlugs: string[]
   children: React.ReactNode
 }
 
-export default function ShellClient({ naoLidas, nomeUsuario, tipoUsuario, children }: Props) {
+export default function ShellClient({ naoLidas, nomeUsuario, tipoUsuario, moduloSlugs, children }: Props) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -37,7 +38,12 @@ export default function ShellClient({ naoLidas, nomeUsuario, tipoUsuario, childr
             : 'fixed inset-y-0 left-0 z-50 -translate-x-full md:relative md:z-auto md:translate-x-0'
         }
       >
-        <Sidebar naoLidas={naoLidas} nomeUsuario={nomeUsuario} tipoUsuario={tipoUsuario} />
+        <Sidebar
+          naoLidas={naoLidas}
+          nomeUsuario={nomeUsuario}
+          tipoUsuario={tipoUsuario}
+          moduloSlugs={moduloSlugs}
+        />
       </div>
 
       {/* Conteúdo principal */}

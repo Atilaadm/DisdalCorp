@@ -102,6 +102,24 @@ export interface Notificacao {
   created_at: string
 }
 
+export interface Modulo {
+  id: string
+  nome: string
+  slug: string
+  descricao: string | null
+  icone: string
+  ativo: boolean
+  ordem: number
+  created_at: string
+}
+
+export interface UsuarioModulo {
+  id: string
+  usuario_id: string
+  modulo_id: string
+  created_at: string
+}
+
 export interface DashboardStats {
   totalPrestadores: number
   prestadoresAtivos: number

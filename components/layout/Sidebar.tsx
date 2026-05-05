@@ -10,26 +10,40 @@ import {
 import { useState } from 'react'
 import LogoDisdal from '@/components/ui/LogoDisdal'
 
-const navItems = [
-  { href: '/',             label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/prestadores',  label: 'Prestadores',  icon: Users },
-  { href: '/contratos',    label: 'Contratos',    icon: FileText },
-  { href: '/financeiro',   label: 'Financeiro',   icon: DollarSign },
-  { href: '/recessos',     label: 'Recessos',     icon: Calendar },
-  { href: '/notificacoes', label: 'Notificações', icon: Bell },
-]
+// ──────────────────────────────────────────────
+// Definição de módulos e seus itens de navegação
+// ──────────────────────────────────────────────
+const MODULOS_NAV: Record<string, { label: string; items: { href: string; label: string; icon: React.ElementType }[] }> = {
+  prestadores: {
+    label: 'Prestadores de Serviço',
+    items: [
+      { href: '/prestadores',  label: 'Prestadores',  icon: Users      },
+      { href: '/contratos',    label: 'Contratos',    icon: FileText   },
+      { href: '/financeiro',   label: 'Financeiro',   icon: DollarSign },
+      { href: '/recessos',     label: 'Recessos',     icon: Calendar   },
+      { href: '/notificacoes', label: 'Notificações', icon: Bell       },
+    ],
+  },
+  // Novos módulos serão adicionados aqui futuramente
+}
 
 const adminItems = [
-  { href: '/admin', label: 'Administração', icon: Shield },
+  { href: '/admin', label: 'Usuários e Módulos', icon: Shield },
 ]
 
 interface SidebarProps {
   naoLidas?: number
   nomeUsuario?: string
   tipoUsuario?: string
+  moduloSlugs?: string[]
 }
 
-export default function Sidebar({ naoLidas = 0, nomeUsuario = '', tipoUsuario = '' }: SidebarProps) {
+export default function Sidebar({
+  naoLidas = 0,
+  nomeUsuario = '',
+  tipoUsuario = '',
+  moduloSlugs = [],
+}: SidebarProps) {
   const pathname = usePathname()
   const [saindo, setSaindo] = useState(false)
 
@@ -42,6 +56,8 @@ export default function Sidebar({ naoLidas = 0, nomeUsuario = '', tipoUsuario = 
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  const isAdmin = tipoUsuario === 'administrador'
 
   return (
     <aside className="flex flex-col w-64 h-full min-h-screen bg-white border-r border-gray-100 shadow-sm">
@@ -57,78 +73,53 @@ export default function Sidebar({ naoLidas = 0, nomeUsuario = '', tipoUsuario = 
       <div className="h-0.5 w-full"
         style={{ background: 'linear-gradient(to right, #1A3A8A, #4DB848, #C8D42A, #009B94)' }} />
 
-      {/* Label */}
-      <div className="px-4 pt-4 pb-1">
-        <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
-          Menu Principal
-        </span>
-      </div>
-
       {/* Navegação */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = isActive(href)
-          const hasNotification = href === '/notificacoes' && naoLidas > 0
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
 
+        {/* Dashboard — sempre visível */}
+        <div className="pt-2 pb-1">
+          <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 px-3">
+            Principal
+          </span>
+        </div>
+        <NavLink href="/" label="Dashboard" Icon={LayoutDashboard} active={isActive('/')} />
+
+        {/* Seções por módulo */}
+        {moduloSlugs.map((slug) => {
+          const modulo = MODULOS_NAV[slug]
+          if (!modulo) return null
           return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${
-                active ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-900'
-              }`}
-              style={active ? { backgroundColor: '#1A3A8A' } : {}}
-            >
-              <Icon
-                size={18}
-                className={`flex-shrink-0 transition-colors ${
-                  active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
-                }`}
-              />
-              <span className="flex-1">{label}</span>
-              {hasNotification && (
-                <span
-                  className="flex items-center justify-center w-5 h-5 text-xs rounded-full font-bold"
-                  style={{ backgroundColor: '#C8D42A', color: '#1A3A8A' }}
-                >
-                  {naoLidas > 9 ? '9+' : naoLidas}
+            <div key={slug}>
+              <div className="pt-3 pb-1">
+                <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 px-3">
+                  {modulo.label}
                 </span>
-              )}
-              {active && <ChevronRight className="w-3.5 h-3.5 text-white/50" />}
-            </Link>
+              </div>
+              {modulo.items.map(({ href, label, icon: Icon }) => (
+                <NavLink
+                  key={href}
+                  href={href}
+                  label={label}
+                  Icon={Icon}
+                  active={isActive(href)}
+                  badge={href === '/notificacoes' && naoLidas > 0 ? naoLidas : undefined}
+                />
+              ))}
+            </div>
           )
         })}
 
-        {/* Seção Admin — visível apenas para administradores */}
-        {tipoUsuario === 'administrador' && (
+        {/* Seção Administração — apenas administradores */}
+        {isAdmin && (
           <>
             <div className="pt-3 pb-1">
               <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 px-3">
                 Sistema
               </span>
             </div>
-            {adminItems.map(({ href, label, icon: Icon }) => {
-              const active = isActive(href)
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${
-                    active ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-900'
-                  }`}
-                  style={active ? { backgroundColor: '#1A3A8A' } : {}}
-                >
-                  <Icon
-                    size={18}
-                    className={`flex-shrink-0 transition-colors ${
-                      active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
-                    }`}
-                  />
-                  <span className="flex-1">{label}</span>
-                  {active && <ChevronRight className="w-3.5 h-3.5 text-white/50" />}
-                </Link>
-              )
-            })}
+            {adminItems.map(({ href, label, icon: Icon }) => (
+              <NavLink key={href} href={href} label={label} Icon={Icon} active={isActive(href)} />
+            ))}
           </>
         )}
       </nav>
@@ -162,5 +153,49 @@ export default function Sidebar({ naoLidas = 0, nomeUsuario = '', tipoUsuario = 
         </button>
       </div>
     </aside>
+  )
+}
+
+// ──────────────────────────────────────────────
+// Componente auxiliar de item de navegação
+// ──────────────────────────────────────────────
+function NavLink({
+  href,
+  label,
+  Icon,
+  active,
+  badge,
+}: {
+  href: string
+  label: string
+  Icon: React.ElementType
+  active: boolean
+  badge?: number
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${
+        active ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-900'
+      }`}
+      style={active ? { backgroundColor: '#1A3A8A' } : {}}
+    >
+      <Icon
+        size={18}
+        className={`flex-shrink-0 transition-colors ${
+          active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
+        }`}
+      />
+      <span className="flex-1">{label}</span>
+      {badge !== undefined && (
+        <span
+          className="flex items-center justify-center w-5 h-5 text-xs rounded-full font-bold"
+          style={{ backgroundColor: '#C8D42A', color: '#1A3A8A' }}
+        >
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+      {active && <ChevronRight className="w-3.5 h-3.5 text-white/50" />}
+    </Link>
   )
 }

@@ -24,15 +24,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const body = await req.json()
 
+  const supabase = await createClient()
+
+  // Atualizar campos do usuário
   const updates: Record<string, unknown> = {}
-  if (body.nome !== undefined) updates.nome = body.nome
-  if (body.tipo !== undefined) updates.tipo = body.tipo
-  if (body.ativo !== undefined) updates.ativo = body.ativo
+  if (body.nome    !== undefined) updates.nome    = body.nome
+  if (body.tipo    !== undefined) updates.tipo    = body.tipo
+  if (body.ativo   !== undefined) updates.ativo   = body.ativo
   if (body.celular !== undefined) updates.celular = body.celular || null
 
-  const supabase = await createClient()
-  const { error } = await supabase.from('usuarios').update(updates).eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (Object.keys(updates).length > 0) {
+    const { error } = await supabase.from('usuarios').update(updates).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Atualizar módulos do usuário (substituição completa)
+  if (body.moduloIds !== undefined) {
+    const moduloIds: string[] = Array.isArray(body.moduloIds) ? body.moduloIds : []
+    const novoTipo = body.tipo ?? (await supabase.from('usuarios').select('tipo').eq('id', id).single()).data?.tipo
+
+    // Admins têm acesso total — não armazenamos vínculos para eles
+    if (novoTipo !== 'administrador') {
+      await supabase.from('usuario_modulos').delete().eq('usuario_id', id)
+      if (moduloIds.length > 0) {
+        await supabase
+          .from('usuario_modulos')
+          .insert(moduloIds.map((moduloId) => ({ usuario_id: id, modulo_id: moduloId })))
+      }
+    }
+  }
 
   return NextResponse.json({ ok: true })
 }

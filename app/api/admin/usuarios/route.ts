@@ -22,20 +22,38 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
 
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('usuarios')
-    .select('id, nome, email, tipo, ativo, celular, created_at')
-    .order('nome')
+
+  const [{ data: usuarios, error }, { data: userModulos }] = await Promise.all([
+    supabase
+      .from('usuarios')
+      .select('id, nome, email, tipo, ativo, celular, created_at')
+      .order('nome'),
+    supabase
+      .from('usuario_modulos')
+      .select('usuario_id, modulo_id'),
+  ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const modulosPorUsuario = (userModulos ?? []).reduce<Record<string, string[]>>((acc, um) => {
+    if (!acc[um.usuario_id]) acc[um.usuario_id] = []
+    acc[um.usuario_id].push(um.modulo_id)
+    return acc
+  }, {})
+
+  const result = (usuarios ?? []).map((u) => ({
+    ...u,
+    moduloIds: modulosPorUsuario[u.id] ?? [],
+  }))
+
+  return NextResponse.json(result)
 }
 
 export async function POST(req: NextRequest) {
   const admin = await verificarAdmin()
   if (!admin) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
 
-  const { nome, email, tipo, celular } = await req.json()
+  const { nome, email, tipo, celular, moduloIds } = await req.json()
 
   if (!nome || !email || !tipo) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes.' }, { status: 400 })
@@ -58,6 +76,13 @@ export async function POST(req: NextRequest) {
     .from('usuarios')
     .update({ nome, tipo, celular: celular || null })
     .eq('id', authData.user.id)
+
+  // Vincular módulos selecionados (admins têm acesso total, não precisa de vínculos)
+  if (tipo !== 'administrador' && Array.isArray(moduloIds) && moduloIds.length > 0) {
+    await adminClient
+      .from('usuario_modulos')
+      .insert(moduloIds.map((moduloId: string) => ({ usuario_id: authData.user.id, modulo_id: moduloId })))
+  }
 
   return NextResponse.json({ id: authData.user.id }, { status: 201 })
 }
