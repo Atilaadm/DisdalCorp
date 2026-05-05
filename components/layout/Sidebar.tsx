@@ -24,7 +24,12 @@ const MODULOS_NAV: Record<string, { label: string; items: { href: string; label:
       { href: '/notificacoes', label: 'Notificações', icon: Bell       },
     ],
   },
-  // Novos módulos serão adicionados aqui futuramente
+  agenda: {
+    label: 'Agenda Corporativa',
+    items: [
+      { href: '/agenda', label: 'Agenda', icon: Calendar },
+    ],
+  },
 }
 
 const adminItems = [

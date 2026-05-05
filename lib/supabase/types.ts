@@ -120,6 +120,47 @@ export interface UsuarioModulo {
   created_at: string
 }
 
+export type AgendaTipoEvento = 'reuniao' | 'compromisso' | 'viagem' | 'outro'
+export type AgendaStatusParticipante = 'pendente' | 'aceito' | 'recusado'
+
+export interface AgendaEvento {
+  id: string
+  titulo: string
+  descricao: string | null
+  local: string | null
+  link_reuniao: string | null
+  inicio: string
+  fim: string
+  dia_inteiro: boolean
+  tipo: AgendaTipoEvento
+  cor: string
+  criado_por: string | null
+  created_at: string
+  updated_at: string
+  participantes?: AgendaParticipante[]
+  criador?: Pick<Usuario, 'id' | 'nome'>
+}
+
+export interface AgendaParticipante {
+  id: string
+  evento_id: string
+  usuario_id: string | null
+  email_externo: string | null
+  nome_externo: string | null
+  status: AgendaStatusParticipante
+  created_at: string
+  usuario?: Pick<Usuario, 'id' | 'nome' | 'email' | 'tipo'>
+}
+
+export interface AgendaPreferencia {
+  id: string
+  usuario_id: string
+  notif_email: boolean
+  lembrete_minutos: number
+  created_at: string
+  updated_at: string
+}
+
 export interface DashboardStats {
   totalPrestadores: number
   prestadoresAtivos: number
