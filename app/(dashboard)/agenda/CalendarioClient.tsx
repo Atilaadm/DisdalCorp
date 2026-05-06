@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale'
 import {
   Plus, X, Save, Trash2, MapPin, Link as LinkIcon,
   Users, AlertTriangle, CalendarDays, Clock,
+  RefreshCw, Unlink, Mail,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { useToast } from '@/components/ui/Toast'
@@ -140,9 +141,18 @@ function datetimeLocalParaISO(dtl: string): string {
 // ──────────────────────────────────────────────
 // Componente principal
 // ──────────────────────────────────────────────
+interface ContaOAuth {
+  provedor: string
+  email_conta: string | null
+  nome_conta: string | null
+  sincronizado_em: string | null
+  ativo: boolean
+}
+
 interface Props {
   usuarios: UsuarioProp[]
   usuarioAtualId: string
+  contaMicrosoftConectada: ContaOAuth | null
 }
 
 const FORM_VAZIO = (usuarioAtualId: string) => ({
@@ -157,7 +167,7 @@ const FORM_VAZIO = (usuarioAtualId: string) => ({
   participanteIds: [usuarioAtualId],
 })
 
-export default function CalendarioClient({ usuarios, usuarioAtualId }: Props) {
+export default function CalendarioClient({ usuarios, usuarioAtualId, contaMicrosoftConectada }: Props) {
   const { mostrar, ToastComponent } = useToast()
 
   // Calendário
@@ -169,6 +179,53 @@ export default function CalendarioClient({ usuarios, usuarioAtualId }: Props) {
   // Filtros
   const [filtroUsuarioId, setFiltroUsuarioId] = useState('todos')
   const [filtroTipo, setFiltroTipo]           = useState('todos')
+
+  // Outlook sync
+  const [contaMs, setContaMs]   = useState<ContaOAuth | null>(contaMicrosoftConectada)
+  const [sincronizando, setSincronizando] = useState(false)
+  const [desconectando, setDesconectando] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('oauth_sucesso') === 'microsoft') {
+      mostrar('Outlook conectado! Eventos sincronizados.', 'sucesso')
+      window.history.replaceState({}, '', '/agenda')
+      // Recarrega para buscar conta conectada
+      setTimeout(() => window.location.reload(), 1500)
+    }
+    if (params.get('oauth_erro')) {
+      mostrar(`Erro ao conectar: ${params.get('oauth_erro')}`, 'erro')
+      window.history.replaceState({}, '', '/agenda')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSincronizar() {
+    setSincronizando(true)
+    const res = await fetch('/api/agenda/sync/microsoft', { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) {
+      mostrar(`Sincronizado! ${data.eventos} evento(s) importados.`, 'sucesso')
+      carregarEventos()
+      setContaMs((prev) => prev ? { ...prev, sincronizado_em: new Date().toISOString() } : prev)
+    } else {
+      mostrar(data.error ?? 'Erro ao sincronizar.', 'erro')
+    }
+    setSincronizando(false)
+  }
+
+  async function handleDesconectar() {
+    if (!confirm('Desconectar sua conta do Outlook? Os eventos importados serão removidos do calendário.')) return
+    setDesconectando(true)
+    const res = await fetch('/api/agenda/oauth/microsoft', { method: 'DELETE' })
+    if (res.ok) {
+      mostrar('Conta desconectada.', 'sucesso')
+      setContaMs(null)
+      carregarEventos()
+    } else {
+      mostrar('Erro ao desconectar.', 'erro')
+    }
+    setDesconectando(false)
+  }
 
   // Modal
   const [modalAberto, setModalAberto]           = useState(false)
@@ -386,6 +443,61 @@ export default function CalendarioClient({ usuarios, usuarioAtualId }: Props) {
             <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-400">
               <div className="w-3.5 h-3.5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
               Carregando...
+            </div>
+          )}
+        </div>
+
+        {/* Painel Outlook */}
+        <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-7 h-7 rounded flex items-center justify-center" style={{ background: '#0078D4' }}>
+              <Mail size={14} className="text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700">Outlook</span>
+          </div>
+
+          {contaMs ? (
+            <div className="flex items-center gap-3 flex-1 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                <span className="text-sm text-gray-600">{contaMs.email_conta ?? contaMs.nome_conta}</span>
+              </div>
+              {contaMs.sincronizado_em && (
+                <span className="text-xs text-gray-400">
+                  Sync: {format(new Date(contaMs.sincronizado_em), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                </span>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={handleSincronizar}
+                  disabled={sincronizando}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors disabled:opacity-60"
+                  style={{ background: '#0078D4' }}
+                >
+                  <RefreshCw size={12} className={sincronizando ? 'animate-spin' : ''} />
+                  {sincronizando ? 'Sincronizando...' : 'Sincronizar'}
+                </button>
+                <button
+                  onClick={handleDesconectar}
+                  disabled={desconectando}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Unlink size={12} />
+                  Desconectar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 flex-1">
+              <span className="text-sm text-gray-400">Não conectado</span>
+              <a
+                href="/api/agenda/oauth/microsoft"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-opacity hover:opacity-90"
+                style={{ background: '#0078D4' }}
+              >
+                <Mail size={12} />
+                Conectar Outlook
+              </a>
             </div>
           )}
         </div>
